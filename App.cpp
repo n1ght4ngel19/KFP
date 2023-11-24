@@ -7,52 +7,99 @@ int main() {
 	std::cout << "Hello OpenCV " << CV_VERSION << std::endl;
 
 	// Load etalon images
-	cv::Mat etalonRock;
-	etalonRock = cv::imread("images/Scissors.jpg", cv::IMREAD_COLOR);
+	cv::Mat etalon, current;
+	etalon = cv::imread("images/Paper.jpg", cv::IMREAD_COLOR);
+	current = cv::imread("images/Rock.jpg", cv::IMREAD_COLOR);
+	//current = cv::imread("images/Scissors.jpg", cv::IMREAD_COLOR);
 
-	if (etalonRock.empty()) {
+
+	if (etalon.empty()) {
 		std::cout << "Could not open or find the image" << std::endl;
 		return -1;
 	}
 
-	cv::resize(etalonRock, etalonRock, cv::Size(), 0.15, 0.15);
-
 	// Resize images to fit screen
-	cv::Mat grayEtalonRock;
-	cv::cvtColor(etalonRock, grayEtalonRock, cv::COLOR_BGR2GRAY);
+	cv::resize(etalon, etalon, cv::Size(), 0.15, 0.15);
+	cv::resize(current, current, cv::Size(), 0.15, 0.15);
 
-	cv::Mat threshEtalonRock;
+	cv::Mat grayEtalon, grayCurrent;
+	cv::cvtColor(etalon, grayEtalon, cv::COLOR_BGR2GRAY);
+	cv::cvtColor(current, grayCurrent, cv::COLOR_BGR2GRAY);
 
-	cv::adaptiveThreshold(grayEtalonRock, threshEtalonRock, 255, cv::ADAPTIVE_THRESH_GAUSSIAN_C, cv::THRESH_BINARY, 11, 11);
+	cv::Mat threshEtalon, threshCurrent;
 
-	cv::bitwise_not(threshEtalonRock, threshEtalonRock);
+	cv::adaptiveThreshold(grayEtalon, threshEtalon, 255, cv::ADAPTIVE_THRESH_GAUSSIAN_C, cv::THRESH_BINARY, 11, 11);
+	cv::adaptiveThreshold(grayCurrent, threshCurrent, 255, cv::ADAPTIVE_THRESH_GAUSSIAN_C, cv::THRESH_BINARY, 11, 11);
 
-	cv::stackBlur(threshEtalonRock, threshEtalonRock, cv::Size(3, 3));
+	cv::bitwise_not(threshEtalon, threshEtalon);
+	cv::bitwise_not(threshCurrent, threshCurrent);
 
-	cv::imshow("gray", grayEtalonRock);
-	cv::imshow("thresh", threshEtalonRock);
+	cv::stackBlur(threshEtalon, threshEtalon, cv::Size(3, 3));
+	cv::stackBlur(threshCurrent, threshCurrent, cv::Size(3, 3));
 
-	std::vector<std::vector<cv::Point>> contours;
-	cv::findContours(threshEtalonRock, contours, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE);
+	//cv::imshow("grayEtalon", grayEtalon);
+	//cv::imshow("threshEtalon", threshEtalon);
 
-	cv::Mat drawing = cv::Mat::zeros(threshEtalonRock.size(), CV_8UC3);
+	//cv::imshow("grayCurrent", grayCurrent);
+	//cv::imshow("threshCurrent", threshCurrent);
 
-	int largest_area = 0;
-	int largest_contour_index = 0;
+	std::vector<std::vector<cv::Point>> etalonContours, currentContours;
+	cv::findContours(threshEtalon, etalonContours, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE);
+	cv::findContours(threshCurrent, currentContours, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE);
 
-	for (size_t i = 0; i < contours.size(); i++) {
-		double area = cv::contourArea(contours[i]);
+	cv::Mat etalonDrawing = cv::Mat::zeros(threshEtalon.size(), CV_8UC3);
+	cv::Mat currentDrawing = cv::Mat::zeros(threshCurrent.size(), CV_8UC3);
 
-		if (area > largest_area) {
-			largest_area = area;
-			largest_contour_index = i;
+#pragma region Etalon Image Contour
+	int largestAreaEtalon = 0;
+	int largestContourIdxEtalon = 0;
+
+	for (size_t i = 0; i < etalonContours.size(); i++) {
+		double area = cv::contourArea(etalonContours[i]);
+
+		if (area > largestAreaEtalon) {
+			largestAreaEtalon = area;
+			largestContourIdxEtalon = i;
 		}
 	}
+#pragma endregion
+
+#pragma region Current Image Contour
+	int largestAreaCurrent = 0;
+	int largestContourIdxCurrent = 0;
+
+	for (size_t i = 0; i < currentContours.size(); i++) {
+		double area = cv::contourArea(currentContours[i]);
+
+		if (area > largestAreaCurrent) {
+			largestAreaCurrent = area;
+			largestContourIdxCurrent = i;
+		}
+	}
+#pragma endregion
+
+	// Make sure the contour is thick enough
+	// If line width is too small, parallel contours will ruin the match
+	int lineWidth = 8;
 
 	cv::Scalar color = cv::Scalar(0, 0, 255);
-	cv::drawContours(drawing, contours, largest_contour_index, color, 2, cv::LINE_8);
+	cv::drawContours(etalonDrawing, etalonContours, largestContourIdxEtalon, color, lineWidth, cv::LINE_8);
+	cv::cvtColor(etalonDrawing, etalonDrawing, cv::COLOR_BGR2GRAY);
 
-	imshow("Drawing", drawing);
+	cv::Scalar color2 = cv::Scalar(0, 255, 0);
+	cv::drawContours(currentDrawing, currentContours, largestContourIdxCurrent, color2, lineWidth, cv::LINE_8);
+	cv::cvtColor(currentDrawing, currentDrawing, cv::COLOR_BGR2GRAY);
+
+	// Calculate match
+	double match = cv::matchShapes(etalonDrawing, currentDrawing, cv::CONTOURS_MATCH_I2, 0);
+	std::cout << "Match: " << match << std::endl;
+
+	// Decide and print the result
+	std::string result = match < .15 ? "It's a match!" : "They aren't the same!";
+	std::cout << result << std::endl;
+
+	imshow("etalonDrawing", etalonDrawing);
+	imshow("currentDrawing", currentDrawing);
 
 	cv::waitKey(0);
 
