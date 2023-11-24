@@ -8,7 +8,7 @@ int main() {
 
 	// Load etalon images
 	cv::Mat etalonRock;
-	etalonRock = cv::imread("images/Rock.jpg", cv::IMREAD_COLOR);
+	etalonRock = cv::imread("images/Scissors.jpg", cv::IMREAD_COLOR);
 
 	if (etalonRock.empty()) {
 		std::cout << "Could not open or find the image" << std::endl;
@@ -27,15 +27,13 @@ int main() {
 
 	cv::bitwise_not(threshEtalonRock, threshEtalonRock);
 
-	cv::GaussianBlur(threshEtalonRock, threshEtalonRock, cv::Size(3, 3), 0, 0);
+	cv::stackBlur(threshEtalonRock, threshEtalonRock, cv::Size(3, 3));
 
 	cv::imshow("gray", grayEtalonRock);
 	cv::imshow("thresh", threshEtalonRock);
 
 	std::vector<std::vector<cv::Point>> contours;
 	cv::findContours(threshEtalonRock, contours, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE);
-
-
 
 	cv::Mat drawing = cv::Mat::zeros(threshEtalonRock.size(), CV_8UC3);
 
@@ -52,9 +50,9 @@ int main() {
 	}
 
 	cv::Scalar color = cv::Scalar(0, 0, 255);
-	cv::drawContours(drawing, contours, largest_contour_index, color, 1, cv::LINE_8);
+	cv::drawContours(drawing, contours, largest_contour_index, color, 2, cv::LINE_8);
 
-	imshow("Contours", drawing);
+	imshow("Drawing", drawing);
 
 	cv::waitKey(0);
 
