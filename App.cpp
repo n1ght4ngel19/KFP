@@ -32,7 +32,7 @@ const int LINE_THICKNESS = 40;
 // This is adjusted when the program detects false positives
 double ACCEPTANCE_THRESHOLD = 0.1;
 // The maximum number of retries for re-checking false positives
-int MAX_RETRIES = 5;
+int MAX_RETRIES = 50;
 // Whether to print out intermediate results (like match values)
 bool RUN_VERBOSE = true;
 
@@ -349,6 +349,10 @@ int main(int argc, char* argv[]) {
 					realPapersVector.push_back(falseGestureDrawing);
 					falseIds.erase(falseIds.begin() + i);
 				}
+				else {
+					// Biasing threshold to allow for a wider range of matches
+					ACCEPTANCE_THRESHOLD += 0.01;
+				}
 			}
 
 			if (properMatch == Gesture::ROCK) {
@@ -366,6 +370,10 @@ int main(int argc, char* argv[]) {
 					endRockSuccessRate++;
 					realRocksVector.push_back(falseGestureDrawing);
 					falseIds.erase(falseIds.begin() + i);
+				}
+				else {
+					// Biasing threshold to allow for a wider range of matches
+					ACCEPTANCE_THRESHOLD += 0.01;
 				}
 			}
 
@@ -385,6 +393,10 @@ int main(int argc, char* argv[]) {
 					realScissorsVector.push_back(falseGestureDrawing);
 					falseIds.erase(falseIds.begin() + i);
 				}
+				else {
+					// Biasing threshold to allow for a wider range of matches
+					ACCEPTANCE_THRESHOLD += 0.01;
+				}
 			}
 
 			if (properMatch == Gesture::NONE) {
@@ -402,6 +414,10 @@ int main(int argc, char* argv[]) {
 					endNoneSuccessRate++;
 					realNonesVector.push_back(falseGestureDrawing);
 					falseIds.erase(falseIds.begin() + i);
+				}
+				else {
+					// Biasing threshold to allow for a wider range of matches
+					ACCEPTANCE_THRESHOLD += 0.01;
 				}
 			}
 		}
@@ -428,6 +444,9 @@ int main(int argc, char* argv[]) {
 	std::cout << "False positives for rock: " << falseRock << std::endl;
 	std::cout << "False positives for scissors: " << falseScissors << std::endl;
 	std::cout << "--------------------------------------------------" << std::endl;
+
+	std::cout << std::endl << "Initial acceptance threshold: " << 0.1 << std::endl;
+	std::cout << "Final acceptance threshold: " << ACCEPTANCE_THRESHOLD << std::endl;
 
 	// Initial success rates
 	std::cout << std::endl << "--------------------------------------------------" << std::endl;
