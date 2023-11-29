@@ -1,3 +1,23 @@
+// A projektem végül nem kõ- papír-olló játék, hanem a játék kézjeleit
+// használja fel egy képfelismerõ program egyképfelismerõ funkció ellá-
+// tásához. Ideális esetben felismeri a kõ papír, és olló jeleket,
+// ezeken felül kiszûri az ide nem illõ elemeket. Észlelt hibák (false
+// positives) esetén további próbálkozásokkal tanul azokból, a futása végén
+// pedig kiértékeli az eredményeket.
+
+// A program legjobban homogén háttérrel rendelkezõ képek esetén mûködik,
+// ahol a kézjelek jól elkülönülnek a háttértõl, egyéb esetekben általában
+// megbízhatatlan megoldásokat adhat.
+
+// A fõ módszer a jelek meghatározására a kontúrok keresése, majd a leg-
+// nagyobb kontúr megtalálása, és a kontúr alapján a kézjel meghatározása.
+// Ez feltételezi, hogy a kézjel a legnagyobb kontúr lesz, ami nem mindig
+// igaz, ezért is fontos, hogy a háttér homogén legyen.
+
+// A program mûködését egyebek mellett nagyobb mennyiségû példaképek
+// felhasználásával lehetne javítani, ami már a kezdeti eredményeket is
+// jelentõsen javítaná.
+
 #include <iostream>
 #include <filesystem>
 #include <opencv2/core.hpp>
