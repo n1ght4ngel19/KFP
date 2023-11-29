@@ -1,9 +1,9 @@
 // A projektem végül nem kõ- papír-olló játék, hanem a játék kézjeleit
-// használja fel egy képfelismerõ program egyképfelismerõ funkció ellá-
-// tásához. Ideális esetben felismeri a kõ papír, és olló jeleket,
-// ezeken felül kiszûri az ide nem illõ elemeket. Észlelt hibák (false
-// positives) esetén további próbálkozásokkal tanul azokból, a futása végén
-// pedig kiértékeli az eredményeket.
+// használja fel egy képfelismerõ program funkciójának ellátásához.
+// Ideális esetben felismeri a kõ papír, és olló jeleket ezeken felül
+// kiszûri az ide nem illõ elemeket. Észlelt hibák (false positives)
+// esetén további próbálkozásokkal tanul azokból, a futása végén pedig
+// kiértékeli az eredményeket.
 
 // A program legjobban homogén háttérrel rendelkezõ képek esetén mûködik,
 // ahol a kézjelek jól elkülönülnek a háttértõl, egyéb esetekben általában
