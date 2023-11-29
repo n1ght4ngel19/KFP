@@ -73,8 +73,10 @@ double matchingOf(cv::Mat drawing1, cv::Mat drawing2) {
 
 // Processes an image for contouring and returns the contour drawing
 cv::Mat makeDrawing(cv::Mat image, std::string drawingName, bool doResize, cv::Scalar color) {
-	// Resize large image to fit screen
-	cv::resize(image, image, cv::Size(), 0.15, 0.15);
+	if (doResize) {
+		// Resize large image to fit screen
+		cv::resize(image, image, cv::Size(), 0.15, 0.15);
+	}
 
 	// Converting to grayscale
 	cv::Mat grayImage;
@@ -217,7 +219,7 @@ int main(int argc, char* argv[]) {
 			continue;
 		}
 
-		cv::Mat gestureDrawing = makeDrawing(gesture, "", true, cv::Scalar(255, 0, 0));
+		cv::Mat gestureDrawing = makeDrawing(gesture, "", false, cv::Scalar(255, 0, 0));
 
 		// Determining matches to base images and the closest match among them
 		double matchPaper = matchingOf(gestureDrawing, paperDrawing);
@@ -328,7 +330,7 @@ int main(int argc, char* argv[]) {
 				}
 			}
 
-			cv::Mat falseGestureDrawing = makeDrawing(falseGesture, "", true, cv::Scalar(255, 0, 0));
+			cv::Mat falseGestureDrawing = makeDrawing(falseGesture, "", false, cv::Scalar(255, 0, 0));
 
 			// Determining matches to base images and the closest match among them
 			if (properMatch == Gesture::PAPER) {
