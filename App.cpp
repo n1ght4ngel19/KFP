@@ -6,13 +6,17 @@
 
 namespace fs = std::filesystem;
 
+// The thickness of the line for drawing contours
 const int LINE_THICKNESS = 40;
 // The similarity threshold for a match to be accepted as possibly valid
 // This is adjusted when the program detects false positives
 double ACCEPTANCE_THRESHOLD = 0.1;
+// The maximum number of retries for re-checking false positives
 int MAX_RETRIES = 5;
+// Whether to print out intermediate results (like match values)
 bool RUN_VERBOSE = true;
 
+// The possible gestures
 enum Gesture {
 	NONE,
 	PAPER,
@@ -20,6 +24,7 @@ enum Gesture {
 	SCISSORS
 };
 
+// Finds the largest contour in a vector of contours
 int findLargestContour(std::vector<std::vector<cv::Point>> contours) {
 	int largestArea = 0;
 	int largestContourIdx = 0;
@@ -36,15 +41,17 @@ int findLargestContour(std::vector<std::vector<cv::Point>> contours) {
 	return largestContourIdx;
 }
 
+// Returns the match value of two images
+// Values range from 0 to 1, with 0 representing the closest resemblance, and 1 the opposite
 double matchingOf(cv::Mat drawing1, cv::Mat drawing2) {
 	// matchShapes() is independent of the scale, rotation, and starting point of the contour,
 	// so we don't need to adjust the images for these factors
 	float match = cv::matchShapes(drawing1, drawing2, cv::CONTOURS_MATCH_I3, 0);
-	//std::cout << "Match (0-1): " << match << std::endl;
 
 	return match;
 }
 
+// Processes an image for contouring and returns the contour drawing
 cv::Mat makeDrawing(cv::Mat image, std::string drawingName, bool doResize, cv::Scalar color) {
 	// Resize large image to fit screen
 	cv::resize(image, image, cv::Size(), 0.15, 0.15);
@@ -105,6 +112,7 @@ int main(int argc, char* argv[]) {
 		}
 	}
 
+	// Creating contour drawings of base images (initial references)
 	cv::Mat paperDrawing = makeDrawing(basePaper, "", false, cv::Scalar(255, 0, 0));
 	cv::Mat rockDrawing = makeDrawing(baseRock, "", false, cv::Scalar(255, 0, 0));
 	cv::Mat scissorsDrawing = makeDrawing(baseScissors, "", false, cv::Scalar(255, 0, 0));
@@ -117,6 +125,7 @@ int main(int argc, char* argv[]) {
 		cv::waitKey(0);
 	}
 
+	// Trackers for the number of images for each gesture
 	int maxNones = 0;
 	int maxPapers = 0;
 	int maxRocks = 0;
@@ -128,6 +137,7 @@ int main(int argc, char* argv[]) {
 	int initialRockSuccessRate = 0;
 	int initialScissorsSuccessRate = 0;
 
+	// Vectors for storing real matches to avoid reading them again from disk
 	std::vector<cv::Mat> realNonesVector;
 	std::vector<cv::Mat> realPapersVector;
 	std::vector<cv::Mat> realRocksVector;
@@ -143,12 +153,14 @@ int main(int argc, char* argv[]) {
 
 	int readingErrors = 0;
 
+	// Checking for path error
 	if (!fs::exists(gesturesPath) && fs::is_directory(gesturesPath)) {
 		std::cout << "Could not open or find the directory gestures" << std::endl;
 
 		return -1;
 	}
 
+	// Looping through all images in the gestures directory
 	for (const auto& entry : fs::directory_iterator(gesturesPath)) {
 		std::string fileName = entry.path().filename().string();
 		std::string directory = entry.path().parent_path().filename().string();
@@ -193,6 +205,7 @@ int main(int argc, char* argv[]) {
 		double matchScissors = matchingOf(gestureDrawing, scissorsDrawing);
 		double smallestMatch = std::min(matchPaper, std::min(matchRock, matchScissors));
 
+		// Checking for matches
 		if (smallestMatch > ACCEPTANCE_THRESHOLD) {
 			if (RUN_VERBOSE) {
 				std::cout << "Match! " << entry.path().filename() << " -> " << "none (" << smallestMatch << ")" << std::endl;
@@ -255,12 +268,14 @@ int main(int argc, char* argv[]) {
 
 	std::cout << "--------------------------------------------------" << std::endl;
 
+	// Trackers for adjusted success rates
 	int endNoneSuccessRate = initialNoneSuccessRate;
 	int endPaperSuccessRate = initialPaperSuccessRate;
 	int endRockSuccessRate = initialRockSuccessRate;
 	int endScissorsSuccessRate = initialScissorsSuccessRate;
 
-	// If there are false positives, check them again until none remains, compare them to proven real matches
+	// If there are false positives, check them again until none remains or max retries are reached
+	// Compare them to proven real matches
 	while (!falseIds.empty()) {
 		if (MAX_RETRIES == 0) {
 			std::cout << std::endl << "Max retries reached, exiting!" << std::endl;
@@ -268,6 +283,7 @@ int main(int argc, char* argv[]) {
 			break;
 		}
 
+		// Looping through all false positives
 		for (int i = 0; i < falseIds.size(); i++) {
 			std::string falseId = falseIds[i];
 
@@ -373,6 +389,7 @@ int main(int argc, char* argv[]) {
 		MAX_RETRIES--;
 	}
 
+	// Summary of results
 	std::cout << std::endl << "--------------------------------------------------" << std::endl;
 	std::cout << "Initial none success rate: " << initialNoneSuccessRate << "/" << maxNones << std::endl;
 	std::cout << "Initial paper success rate: " << initialPaperSuccessRate << "/" << maxPapers << std::endl;
@@ -390,6 +407,7 @@ int main(int argc, char* argv[]) {
 	std::cout << "False positives for scissors: " << falseScissors << std::endl;
 	std::cout << "--------------------------------------------------" << std::endl;
 
+	// Initial success rates
 	std::cout << std::endl << "--------------------------------------------------" << std::endl;
 	std::cout << "Initial success rate: "
 		<< (initialNoneSuccessRate + initialPaperSuccessRate + initialRockSuccessRate + initialScissorsSuccessRate)
@@ -397,6 +415,7 @@ int main(int argc, char* argv[]) {
 		<< (maxNones + maxPapers + maxRocks + maxScissors) << std::endl;
 	std::cout << "--------------------------------------------------" << std::endl;
 
+	// Adjusted success rates
 	std::cout << std::endl << "--------------------------------------------------" << std::endl;
 	std::cout << "End success rate: "
 		<< (endNoneSuccessRate + endPaperSuccessRate + endRockSuccessRate + endScissorsSuccessRate)
